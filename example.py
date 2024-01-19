@@ -4,23 +4,48 @@ import matplotlib.pyplot as plt
 from LPGMCalculator import LPGMCalculator
 from obspy import read
 
-def read_acceleration_from_sac(file_path):
+
+def read_from_sac(file_path):
     stream = read(file_path)
     acceleration_trace = stream[0]
     return acceleration_trace.data
 
-acc_x = read_acceleration_from_sac('X.sac')
-acc_y = read_acceleration_from_sac('Y.sac')
-acc_z = read_acceleration_from_sac('Z.sac')
+# <-- acc
+# sampleRate = 20
+# acc_x = read_from_sac('X.sac')
+# acc_y = read_from_sac('Y.sac')
+# acc_z = read_from_sac('Z.sac')
 
-if len(acc_x) != len(acc_y) or len(acc_y) != len(acc_z):
-    raise ValueError("The lengths of the acceleration data from SAC files are not equal")
+# if len(acc_x) != len(acc_y) or len(acc_y) != len(acc_z):
+#     raise ValueError("The lengths of the acceleration data from SAC files are not equal")
+# <-- acc
+
+# <-- vel
+
+
+def velocity_to_acceleration(velocity, sample_rate):
+    acceleration = np.diff(velocity) * sample_rate
+    acceleration = np.insert(acceleration, 0, 0)
+    return acceleration
+
+
+vel_x = read_from_sac('X.sac')
+vel_y = read_from_sac('Y.sac')
+vel_z = read_from_sac('Z.sac')
+
+if len(vel_x) != len(vel_y) or len(vel_y) != len(vel_z):
+    raise ValueError(
+        "The lengths of the velocity data from SAC files are not equal")
+
+sampleRate = 50
+acc_x = velocity_to_acceleration(vel_x, sampleRate)
+acc_y = velocity_to_acceleration(vel_y, sampleRate)
+acc_z = velocity_to_acceleration(vel_z, sampleRate)
+# <-- vel
 
 accel = np.column_stack((acc_x, acc_y, acc_z))
 accel_scaled = accel / 10000
-print(accel_scaled)
 
-sampleRate = 20
 lpgmCalculator = LPGMCalculator(sampleRate)
 
 accPx = RingBuffer(30*sampleRate, dtype=np.float64)
@@ -46,10 +71,12 @@ for i in range(data_length):
         vectPx = accPx[:]
         vectPy = accPy[:]
         vectPz = accPz[:]
-        PGA = np.max(np.sqrt(vectPx[-100:]**2 + vectPy[-100:]**2 + vectPz[-100:]**2))
+        PGA = np.max(np.sqrt(vectPx[-100:]**2 +
+                     vectPy[-100:]**2 + vectPz[-100:]**2))
         maxSva = lpgmCalculator.getMaxSva()
 
-        valMax = np.max([np.max(np.abs(vectPx)), np.max(np.abs(vectPy)), np.max(np.abs(vectPz))])
+        valMax = np.max([np.max(np.abs(vectPx)), np.max(
+            np.abs(vectPy)), np.max(np.abs(vectPz))])
         strTitle = 'PGA {:.2f} gal Sva {:.2f} cm/s LPGM {} ({:.2f} cm/s)'.format(
             PGA, np.max(maxSva[:100]), LPGM, maxSva30)
 
@@ -79,5 +106,6 @@ for i in range(data_length):
 
         print(strTitle)
         plt.pause(0.5)
+        # plt.pause(1/sampleRate)
 
 plt.show()
