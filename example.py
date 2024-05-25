@@ -23,9 +23,17 @@ def read_from_sac(file_path):
 # <-- vel
 
 
-def velocity_to_acceleration(velocity, sample_rate):
-    acceleration = np.diff(velocity) * sample_rate
-    acceleration = np.insert(acceleration, 0, 0)
+last_velocity = None
+
+
+def velocity_to_acceleration(velocity_data, sample_rate):
+    global last_velocity
+    if last_velocity is None:
+        acceleration = np.zeros(len(velocity_data))
+    else:
+        delta_v = np.diff(velocity_data, prepend=last_velocity[-1])
+        acceleration = delta_v * sample_rate
+    last_velocity = velocity_data
     return acceleration
 
 
@@ -105,7 +113,7 @@ for i in range(data_length):
         plt.grid()
 
         print(strTitle)
-        plt.pause(0.5)
-        # plt.pause(1/sampleRate)
+        # plt.pause(0.5)
+        plt.pause(1/sampleRate)
 
 plt.show()
