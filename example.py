@@ -11,7 +11,7 @@ matplotlib.use('TkAgg')  # 使用較快的後端
 FILTER = True
 
 # 播放偏移（秒）- 跳過前面的資料從指定時間開始播放
-OFFSET = 60 * 6 + 15
+OFFSET = 60 * 6
 
 
 def read_from_mseed(file_path):
